@@ -1,0 +1,11 @@
+services:
+  gyaanv2:
+    build: .
+    ports:
+      - "8501:8501"
+    env_file: .env
+    volumes:
+      - .:/app
+      - gyaanv2-data:/app/.data
+volumes:
+  gyaanv2-data:
