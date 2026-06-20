@@ -1,8 +1,10 @@
 from sentence_transformers import SentenceTransformer
+import torch
 
 class Embedder:
     def __init__(self, model_name:str):
-        self.model = SentenceTransformer(model_name, device="cpu")
+        with torch.device("cpu"):
+            self.model = SentenceTransformer(model_name, device="cpu")
     @property
     def dimension(self):
         return self.model.get_sentence_embedding_dimension()
