@@ -45,4 +45,4 @@ Mount `credentials.json` into the container or bind the project directory as con
 5. Open **Chat**, ask a question, and inspect retrieved sources/chunks.
 
 ## Configuration
-See `.env.example`. `LLM_PROVIDER=extractive` avoids external LLM calls. Use `openai`, `claude`, `gemini`, or `ollama` to enable generation from retrieved context only.
+See `.env.example`. `LLM_PROVIDER=ollama` sends final answers to a locally running Ollama server by default. Set `LLM_MODEL` to the local model name you downloaded (for example `llama3.1`), or use `openai`, `claude`, `gemini`, or `extractive` for other answer modes. Final answers include citations and the model used when data is found.
