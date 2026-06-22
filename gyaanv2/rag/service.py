@@ -24,6 +24,7 @@ def citation(payload):
     bits.append(f"chunk {payload.get('chunk_index',0)}")
     return ' / '.join(map(str,bits))
 
+
 @dataclass
 class SyncStats:
     scanned_files: int = 0
@@ -49,6 +50,7 @@ def document_coalesce_key(doc):
     if doc.image_number is not None:
         key_parts.append(f'image-{doc.image_number}')
     return ':'.join(map(str, key_parts))
+
 
 class RAGService:
     def __init__(self):
