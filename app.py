@@ -1,8 +1,8 @@
 import streamlit as st
 from gyaanv2.rag.service import RAGService
 
-st.set_page_config(page_title='gyaanv2', layout='wide')
-st.title('gyaanv2')
+st.set_page_config(page_title='Orion - Context Layer', layout='wide')
+st.title('Orion - Context Layer')
 
 # @st.cache_resource(show_spinner='Loading models and stores...')
 # def service(): return RAGService()
