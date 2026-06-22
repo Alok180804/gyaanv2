@@ -65,6 +65,13 @@ class MetadataStore:
             c.execute('update sources set active=0,status=\'removed\' where id=?',(source_id,))
         return doc_ids
 
+    def get_document_by_drive_key(self, source_id:int, drive_file_id:str, file_type:str, coalesce_key:str):
+        with self.connect() as c:
+            return c.execute(
+                'select * from documents where source_id=? and drive_file_id=? and file_type=? and coalesce_key=?',
+                (source_id, drive_file_id, file_type, coalesce_key),
+            ).fetchone()
+
     def replace_document(self, doc, coalesce_key='main') -> int:
         now=utc_now()
         with self.connect() as c:
