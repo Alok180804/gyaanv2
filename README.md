@@ -1,12 +1,13 @@
-# gyaanv2
+# Orion - Context Layer
 
 A clean Streamlit RAG app for Google Drive knowledge bases. Paste a Google Drive folder or file link, sync supported files, and ask grounded questions with citations. If the answer is not present in indexed documents, the assistant returns exactly `No data found.`
 
 ## Features
 - Google Drive folders and individual files as sources
 - Google Docs, Sheets, Slides, PDFs, plain text, CSV, Markdown, DOCX, XLSX, and PPTX ingestion where available
-- Recursive chunking with page/sheet/slide-aware metadata
+- Recursive chunking with page/sheet/slide/image-aware metadata
 - Sentence Transformers embeddings
+- Optional Hugging Face cross-encoder reranking with `BAAI/bge-reranker-v2-m3` by default
 - Local Qdrant vector database
 - SQLite metadata database
 - Configurable LLM providers: OpenAI, Claude, Gemini, Ollama, or extractive fallback
@@ -46,3 +47,17 @@ Mount `credentials.json` into the container or bind the project directory as con
 
 ## Configuration
 See `.env.example`. `LLM_PROVIDER=ollama` sends final answers to a locally running Ollama server by default. Set `LLM_MODEL` to the local model name you downloaded (for example `llama3.1`), or use `openai`, `claude`, `gemini`, or `extractive` for other answer modes. Final answers include citations and the model used when data is found.
+
+### Reranking
+The default retrieval flow embeds the query, retrieves `INITIAL_RETRIEVAL_K=50` chunks from Qdrant using the existing cosine-similarity search, optionally reranks those chunks with a Hugging Face cross-encoder, then sends only `FINAL_CONTEXT_K=5` chunks to the LLM.
+
+Relevant environment variables:
+
+```bash
+INITIAL_RETRIEVAL_K=50
+FINAL_CONTEXT_K=5
+RERANKER_MODEL=BAAI/bge-reranker-v2-m3
+ENABLE_RERANKER=true
+```
+
+Set `ENABLE_RERANKER=false` to keep the original cosine-ranked retrieval order while still limiting the final LLM context to `FINAL_CONTEXT_K`. If the default reranker is too heavy for the deployment target, set `RERANKER_MODEL=cross-encoder/ms-marco-MiniLM-L12-v2` for a smaller cross-encoder alternative.

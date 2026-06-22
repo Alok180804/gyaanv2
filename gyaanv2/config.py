@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env', extra='ignore')
 
-    app_name: str = 'gyaanv2'
+    app_name: str = 'Orion - Context Layer'
     data_dir: Path = Path('.data')
     sqlite_path: Path = Path('.data/gyaanv2.sqlite3')
     qdrant_path: Path = Path('.data/qdrant')
@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     chunk_size: int = 1000
     chunk_overlap: int = 200
     retrieval_limit: int = 8
+    INITIAL_RETRIEVAL_K: int = Field(50, alias='INITIAL_RETRIEVAL_K')
+    FINAL_CONTEXT_K: int = Field(5, alias='FINAL_CONTEXT_K')
+    RERANKER_MODEL: str = Field('BAAI/bge-reranker-v2-m3', alias='RERANKER_MODEL')
+    ENABLE_RERANKER: bool = Field(True, alias='ENABLE_RERANKER')
     min_relevance_score: float = 0.25
     google_credentials_file: Path = Path('credentials.json')
     google_token_file: Path = Path('token.json')
