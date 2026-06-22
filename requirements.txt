@@ -21,3 +21,6 @@ requests>=2.32
 openai>=1.35
 anthropic>=0.30
 google-genai>=0.3
+sentencepiece>=0.2
+protobuf>=4.25
+safetensors>=0.4

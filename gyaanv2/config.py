@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env', extra='ignore')
 
-    app_name: str = 'gyaanv2'
+    app_name: str = 'Orion - Context Layer'
     data_dir: Path = Path('.data')
     sqlite_path: Path = Path('.data/gyaanv2.sqlite3')
     qdrant_path: Path = Path('.data/qdrant')
