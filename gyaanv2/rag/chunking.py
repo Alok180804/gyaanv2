@@ -15,6 +15,8 @@ class Chunker:
             'page_number':doc.page_number,
             'sheet_name':doc.sheet_name,
             'slide_number':doc.slide_number,
+            'image_number':doc.image_number,
+            'content_source':doc.content_source,
             'modified_time':doc.modified_time
         }
 

@@ -33,12 +33,18 @@ class MetadataStore:
             create table if not exists document_keys(document_id integer primary key, coalesce_key text not null);
             create table if not exists chunks(
               id text primary key, document_id integer not null, chunk_index integer not null, content text not null,
-              page_number integer, sheet_name text, slide_number integer, score real, created_at text not null
+              page_number integer, sheet_name text, slide_number integer, image_number integer,
+              content_source text not null default 'text', score real, created_at text not null
             );
             ''')
             cols = [r['name'] for r in c.execute('pragma table_info(documents)')]
             if 'coalesce_key' not in cols:
                 c.execute('alter table documents add column coalesce_key text not null default \'main\'')
+            chunk_cols = [r['name'] for r in c.execute('pragma table_info(chunks)')]
+            if 'image_number' not in chunk_cols:
+                c.execute('alter table chunks add column image_number integer')
+            if 'content_source' not in chunk_cols:
+                c.execute("alter table chunks add column content_source text not null default 'text'")
 
     def add_source(self, url, drive_id, drive_kind, name):
         with self.connect() as c:
@@ -81,9 +87,9 @@ class MetadataStore:
         rows=[]
         for i,ch in enumerate(chunks):
             m=ch.metadata
-            rows.append((ch.chunk_id,document_id,i,ch.content,m.get('page_number'),m.get('sheet_name'),m.get('slide_number'),utc_now()))
+            rows.append((ch.chunk_id,document_id,i,ch.content,m.get('page_number'),m.get('sheet_name'),m.get('slide_number'),m.get('image_number'),m.get('content_source', 'text'),utc_now()))
         with self.connect() as c:
-            c.executemany('insert or replace into chunks(id,document_id,chunk_index,content,page_number,sheet_name,slide_number,created_at) values(?,?,?,?,?,?,?,?)', rows)
+            c.executemany('insert or replace into chunks(id,document_id,chunk_index,content,page_number,sheet_name,slide_number,image_number,content_source,created_at) values(?,?,?,?,?,?,?,?,?,?)', rows)
             c.execute('update documents set chunk_count=? where id=?',(len(rows),document_id))
 
     def list_documents(self):

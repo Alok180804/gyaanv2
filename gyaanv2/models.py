@@ -28,6 +28,8 @@ class LoadedDocument:
     page_number: Optional[int] = None
     sheet_name: Optional[str] = None
     slide_number: Optional[int] = None
+    image_number: Optional[int] = None
+    content_source: str = 'text'
     extra: dict[str, Any] = field(default_factory=dict)
 
 

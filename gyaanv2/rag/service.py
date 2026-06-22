@@ -12,6 +12,7 @@ def citation(payload):
     if payload.get('page_number'): bits.append(f"page {payload['page_number']}")
     if payload.get('sheet_name'): bits.append(f"sheet {payload['sheet_name']}")
     if payload.get('slide_number'): bits.append(f"slide {payload['slide_number']}")
+    if payload.get('image_number'): bits.append(f"image {payload['image_number']}")
     bits.append(f"chunk {payload.get('chunk_index',0)}")
     return ' / '.join(map(str,bits))
 
@@ -29,7 +30,12 @@ class RAGService:
             drive=GoogleDriveClient(self.settings.google_credentials_file,self.settings.google_token_file); count=0
             for file in drive.iter_files(source['drive_id']):
                 for doc in drive.load_file(source_id,file):
-                    key=doc.sheet_name or doc.page_number or doc.slide_number or 'main'
+                    key_parts = [doc.sheet_name or doc.page_number or doc.slide_number or 'main']
+                    if doc.content_source != 'text':
+                        key_parts.append(doc.content_source)
+                    if doc.image_number is not None:
+                        key_parts.append(f'image-{doc.image_number}')
+                    key = ':'.join(map(str, key_parts))
                     doc_id=self.db.replace_document(doc, str(key))
                     chunks=list(self.chunker.chunk(doc_id, doc)); vecs=self.embedder.embed_texts([c.content for c in chunks]) if chunks else []
                     self.vectors.delete_document(doc_id); self.vectors.upsert_chunks(chunks, vecs); self.db.add_chunks(doc_id,chunks); count+=1
