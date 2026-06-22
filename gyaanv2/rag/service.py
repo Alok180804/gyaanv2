@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from time import perf_counter
 
 from gyaanv2.config import get_settings
@@ -23,6 +24,32 @@ def citation(payload):
     bits.append(f"chunk {payload.get('chunk_index',0)}")
     return ' / '.join(map(str,bits))
 
+@dataclass
+class SyncStats:
+    scanned_files: int = 0
+    scanned_parts: int = 0
+    indexed: int = 0
+    skipped: int = 0
+
+    def __iadd__(self, other):
+        self.scanned_files += other.scanned_files
+        self.scanned_parts += other.scanned_parts
+        self.indexed += other.indexed
+        self.skipped += other.skipped
+        return self
+
+    def __str__(self):
+        return f'{self.indexed} re-indexed document parts, {self.skipped} unchanged document parts, {self.scanned_files} scanned files'
+
+
+def document_coalesce_key(doc):
+    key_parts = [doc.sheet_name or doc.page_number or doc.slide_number or 'main']
+    if doc.content_source != 'text':
+        key_parts.append(doc.content_source)
+    if doc.image_number is not None:
+        key_parts.append(f'image-{doc.image_number}')
+    return ':'.join(map(str, key_parts))
+
 class RAGService:
     def __init__(self):
         self.settings=get_settings(); self.db=MetadataStore(self.settings.sqlite_path); self.embedder=Embedder(self.settings.embedding_model)
@@ -35,23 +62,24 @@ class RAGService:
     def sync_source(self, source_id:int):
         source=self.db.get_source(source_id); self.db.set_source_status(source_id,'syncing')
         try:
-            drive=GoogleDriveClient(self.settings.google_credentials_file,self.settings.google_token_file); count=0
+            drive=GoogleDriveClient(self.settings.google_credentials_file,self.settings.google_token_file); stats=SyncStats()
             for file in drive.iter_files(source['drive_id']):
+                stats.scanned_files+=1
                 for doc in drive.load_file(source_id,file):
-                    key_parts = [doc.sheet_name or doc.page_number or doc.slide_number or 'main']
-                    if doc.content_source != 'text':
-                        key_parts.append(doc.content_source)
-                    if doc.image_number is not None:
-                        key_parts.append(f'image-{doc.image_number}')
-                    key = ':'.join(map(str, key_parts))
-                    doc_id=self.db.replace_document(doc, str(key))
+                    stats.scanned_parts+=1
+                    coalesce_key=document_coalesce_key(doc)
+                    existing=self.db.get_document_by_drive_key(doc.source_id, doc.drive_file_id, doc.file_type, coalesce_key)
+                    if existing and existing['modified_time'] == doc.modified_time:
+                        stats.skipped+=1
+                        continue
+                    doc_id=self.db.replace_document(doc, coalesce_key)
                     chunks=list(self.chunker.chunk(doc_id, doc)); vecs=self.embedder.embed_texts([c.content for c in chunks]) if chunks else []
-                    self.vectors.delete_document(doc_id); self.vectors.upsert_chunks(chunks, vecs); self.db.add_chunks(doc_id,chunks); count+=1
-            self.db.set_source_status(source_id,'synced'); return count
+                    self.vectors.delete_document(doc_id); self.vectors.upsert_chunks(chunks, vecs); self.db.add_chunks(doc_id,chunks); stats.indexed+=1
+            self.db.set_source_status(source_id,'synced'); return stats
         except Exception as e:
             self.db.set_source_status(source_id,'error',str(e)); raise
     def sync_all(self):
-        total=0
+        total=SyncStats()
         for s in self.db.list_sources():
             if s['active']: total+=self.sync_source(s['id'])
         return total
