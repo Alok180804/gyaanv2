@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     min_relevance_score: float = 0.25
     google_credentials_file: Path = Path('credentials.json')
     google_token_file: Path = Path('token.json')
-    llm_provider: str = 'ollama'
+    llm_provider: str = 'extractive'
     # llm_model: str | None = None
     # openai_api_key: str | None = None
     # anthropic_api_key: str | None = None
@@ -40,3 +40,5 @@ def get_settings() -> Settings:
     settings = Settings()
     settings.ensure_dirs()
     return settings
+
+

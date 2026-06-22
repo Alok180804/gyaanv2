@@ -18,3 +18,8 @@ qdrant_data/
 # OS / editor
 .DS_Store
 .vscode/
+
+.venv/
+.venv_old/
+__pycache__/
+*.pyc
