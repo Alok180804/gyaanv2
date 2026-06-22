@@ -1,6 +1,4 @@
-import logging
 from dataclasses import dataclass
-from time import perf_counter
 
 from gyaanv2.config import get_settings
 from gyaanv2.ingestion.drive import GoogleDriveClient, parse_drive_link
@@ -43,15 +41,6 @@ class SyncStats:
         return f'{self.indexed} re-indexed document parts, {self.skipped} unchanged document parts, {self.scanned_files} scanned files'
 
 
-def document_coalesce_key(doc):
-    key_parts = [doc.sheet_name or doc.page_number or doc.slide_number or 'main']
-    if doc.content_source != 'text':
-        key_parts.append(doc.content_source)
-    if doc.image_number is not None:
-        key_parts.append(f'image-{doc.image_number}')
-    return ':'.join(map(str, key_parts))
-
-
 class RAGService:
     def __init__(self):
         self.settings=get_settings(); self.db=MetadataStore(self.settings.sqlite_path); self.embedder=Embedder(self.settings.embedding_model)
@@ -69,7 +58,8 @@ class RAGService:
                 stats.scanned_files+=1
                 for doc in drive.load_file(source_id,file):
                     stats.scanned_parts+=1
-                    coalesce_key=document_coalesce_key(doc)
+                    key=doc.sheet_name or doc.page_number or doc.slide_number or 'main'
+                    coalesce_key=str(key)
                     existing=self.db.get_document_by_drive_key(doc.source_id, doc.drive_file_id, doc.file_type, coalesce_key)
                     if existing and existing['modified_time'] == doc.modified_time:
                         stats.skipped+=1
